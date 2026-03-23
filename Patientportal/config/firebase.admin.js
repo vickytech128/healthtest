@@ -1,30 +1,21 @@
-// config/firebase.admin.js
-import admin from "firebase-admin";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import { initializeApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { initializeFirestore } from "firebase/firestore";
 
-// Construct path to serviceAccountKey.json correctly in ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const serviceAccountPath = path.resolve(__dirname, "../../config/serviceAccountKey.json");
+const firebaseConfig = {
+  apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_FIREBASE_APP_ID || process.env.FIREBASE_APP_ID,
+  measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID || process.env.FIREBASE_MEASUREMENT_ID
+};
 
-// Read and parse the JSON file manually (avoids ES module import assertions issue)
-const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+const app = initializeApp(firebaseConfig);
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
-}
+export const auth = getAuth(app);
+export const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+export const googleProvider = new GoogleAuthProvider();
 
-export const auth = admin.auth();
-export const db = new admin.firestore.Firestore({
-  projectId: serviceAccount.project_id,
-  credentials: {
-    client_email: serviceAccount.client_email,
-    private_key: serviceAccount.private_key
-  },
-  databaseId: "users" // ⚠️ Targets the custom named database!
-});
-export default admin;
+export default app;
